@@ -1,0 +1,18 @@
+{
+  "better-extension-manager.workspace": [
+    "bradlc.vscode-tailwindcss",
+    "chamboug.js-auto-backticks",
+    "cschlosser.doxdocgen",
+    "dbaeumer.vscode-eslint",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "jsjzh.color-converter",
+    "ms-vscode.vscode-typescript-next",
+    "qcz.restart-ts-server-button",
+    "redhat.vscode-yaml",
+    "vincaslt.highlight-matching-tag",
+    "yoavbls.pretty-ts-errors",
+    "yzhang.markdown-all-in-one"
+  ],
+  "typescript.tsdk": "node_modules\\typescript\\lib"
+}
