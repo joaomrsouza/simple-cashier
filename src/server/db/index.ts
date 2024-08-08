@@ -1,4 +1,7 @@
+import "server-only";
+
 import { getToday } from "@/lib/utils";
+import bcrypt from "bcrypt";
 import { Database } from "sqlite3";
 
 export interface SalesDay {
@@ -21,6 +24,13 @@ export interface SalesEntry {
   value: number;
 }
 
+export interface SalesEntryStats {
+  balance: number;
+  count: number;
+  income: number;
+  outcome: number;
+}
+
 class DatabaseManager {
   public db: Database;
 
@@ -31,6 +41,7 @@ class DatabaseManager {
 
   private initialize() {
     const today = getToday();
+    const hashedDefaultPass = bcrypt.hashSync("admin", 10);
 
     this.db.serialize(() => {
       // Create the sales_day table
@@ -53,24 +64,34 @@ class DatabaseManager {
         )
       `);
 
+      // Create the secrets table
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS "secrets" (
+          "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+          "key" TEXT NOT NULL UNIQUE,
+          "value" TEXT NOT NULL
+        )
+      `);
+
+      // Insert the 'admin-pass' secret as 'admin'
+      this.db.run(
+        `INSERT OR IGNORE INTO secrets (key, value) VALUES ('admin-pass', ?)`,
+        hashedDefaultPass,
+      );
+
       // Close all open sales_days
-      this.db.run(`UPDATE sales_day SET open = 0 WHERE date != ?`, today);
+      this.db.run(
+        `UPDATE sales_day SET open = 0 WHERE open = 1 AND date != ?`,
+        today,
+      );
     });
 
     console.log("Tables created successfully");
   }
 
-  // public getAllSalesDay(): Promise<SalesDay[]> {
-  //   const stmt = this.db.prepare(`
-  //     SELECT * FROM sales_day ORDER BY id DESC
-  //   `);
-  //   return new Promise((res, rej) => {
-  //     stmt.all<SalesDay>((err, data) => {
-  //       if (err) rej(err);
-  //       res(data);
-  //     });
-  //   });
-  // }
+  // =========================
+  // ===  SALES DAY TABLE  ===
+  // =========================
 
   public getSalesDayPageCount(limit: number): Promise<number> {
     const stmt = this.db.prepare(`SELECT COUNT(id) AS count FROM sales_day`);
@@ -127,6 +148,24 @@ class DatabaseManager {
     });
   }
 
+  public insertSalesDay(date: string, open: 0 | 1 = 1): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT INTO sales_day (date, open) VALUES (?, ?)
+    `);
+    return new Promise<void>((res, rej) => {
+      stmt.run([date, open], err => {
+        if (err) {
+          rej(new Error("Erro ao abrir caixa! Por favor, tente novamente."));
+        }
+        res();
+      });
+    });
+  }
+
+  // =========================
+  // === SALES ENTRY TABLE ===
+  // =========================
+
   public async getPagedSalesEntries(
     sales_day: string,
     limit: number,
@@ -170,16 +209,28 @@ class DatabaseManager {
     });
   }
 
-  public insertSalesDay(date: string, open: 0 | 1 = 1): Promise<void> {
+  public async getSalesEntriesStats(
+    sales_day: string,
+  ): Promise<SalesEntryStats | undefined> {
+    const salesDay = await this.getSalesDay(sales_day);
+    if (!salesDay) return { balance: 0, count: 0, income: 0, outcome: 0 };
+
     const stmt = this.db.prepare(`
-      INSERT INTO sales_day (date, open) VALUES (?, ?)
+      SELECT
+        COUNT(id) AS count,
+        SUM(CASE WHEN value > 0 THEN value ELSE 0 END) AS income,
+        SUM(CASE WHEN value < 0 THEN value ELSE 0 END) AS outcome,
+        SUM(value) AS balance
+      FROM
+        sales_entry
+      WHERE
+        sales_day_id = ?
     `);
-    return new Promise<void>((res, rej) => {
-      stmt.run([date, open], (err) => {
-        if (err) {
-          rej(new Error("Erro ao abrir caixa! Por favor, tente novamente."));
-        }
-        res();
+
+    return new Promise((res, rej) => {
+      stmt.get<SalesEntryStats>(salesDay.id, (err, data) => {
+        if (err) rej(err);
+        res(data);
       });
     });
   }
@@ -197,7 +248,7 @@ class DatabaseManager {
     `);
 
     return new Promise<void>((res, rej) => {
-      stmt.run([salesDay.id, value], (err) => {
+      stmt.run([salesDay.id, value], err => {
         if (err) {
           rej(new Error("Erro ao salvar entrada! Por favor, tente novamente."));
         }
@@ -212,7 +263,7 @@ class DatabaseManager {
     `);
 
     return new Promise<void>((res, rej) => {
-      stmt.run(id, (err) => {
+      stmt.run(id, err => {
         if (err) {
           rej(
             new Error(
@@ -220,6 +271,34 @@ class DatabaseManager {
             ),
           );
         }
+        res();
+      });
+    });
+  }
+
+  // =========================
+  // ===   SECRETS TABLE   ===
+  // =========================
+
+  public getSecret(key: string): Promise<string | undefined> {
+    const stmt = this.db.prepare(`
+      SELECT value FROM secrets WHERE key = ?
+    `);
+    return new Promise((res, rej) => {
+      stmt.get<{ value: string }>(key, (err, data) => {
+        if (err) rej(err);
+        res(data?.value);
+      });
+    });
+  }
+
+  public setSecret(key: string, value: string): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO secrets (key, value) VALUES (?, ?)
+    `);
+    return new Promise((res, rej) => {
+      stmt.run([key, value], err => {
+        if (err) rej(err);
         res();
       });
     });

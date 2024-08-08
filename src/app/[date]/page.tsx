@@ -6,8 +6,9 @@ import { z } from "@/lib/zod";
 import { db } from "@/server/db";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
+import { DateSummary } from "./_components/date-summary";
 import { EntryForm } from "./_components/entry-form";
-import { SalesEntryTable } from "./sales-entry-table";
+import { SalesEntryTable } from "./_components/sales-entry-table";
 
 const SearchParamsSchema = z.object({
   page: z.coerce.number().default(1),
@@ -30,6 +31,7 @@ export default async function DatePage({ params, searchParams }: PageProps) {
     (page - 1) * per_page,
   );
   const pageCount = await db.getSalesEntriesPageCount(params.date, per_page);
+  const stats = await db.getSalesEntriesStats(params.date);
 
   return (
     <PageContainer>
@@ -46,6 +48,7 @@ export default async function DatePage({ params, searchParams }: PageProps) {
       </div>
       <Separator />
       {salesDay?.open === 1 && <EntryForm date={params.date} />}
+      {stats && <DateSummary stats={stats} />}
       <SalesEntryTable
         data={salesEntries}
         pageCount={pageCount}

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
+import { AdminLockerProvider } from "./_components/admin-locker-provider";
 import { AppHeader } from "./_components/app-header";
 import { ThemeProvider } from "./_components/theme-provider";
 
@@ -36,17 +37,19 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="system"
         >
-          <div className="grid h-screen grid-rows-[auto,1fr]">
-            <AppHeader />
-            <div className="overflow-y-auto">
-              <div className="m-2 mr-0 h-full overflow-y-auto">
-                <main className="mb-4 mr-2 rounded-md border p-2">
-                  {children}
-                </main>
+          <AdminLockerProvider>
+            <div className="grid h-screen grid-rows-[auto,1fr]">
+              <AppHeader />
+              <div className="overflow-y-auto">
+                <div className="m-2 mr-0 h-full overflow-y-auto">
+                  <main className="mb-4 mr-2 rounded-md border p-2">
+                    {children}
+                  </main>
+                </div>
               </div>
             </div>
-          </div>
-          <Toaster richColors />
+            <Toaster richColors />
+          </AdminLockerProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "@/lib/zod";
 import { db } from "@/server/db";
 import { OpenCashierButton } from "./_components/open-chashier-button";
-import { SalesDayTable } from "./sales-day-table";
+import { SalesDayTable } from "./_components/sales-day-table";
 
 const SearchParamsSchema = z.object({
   page: z.coerce.number().default(1),

@@ -78,9 +78,7 @@ function getColumns(
       accessorKey: "value",
       cell: ({ cell }) =>
         cell.getValue<number>() > 0 ? (
-          <Badge className="bg-emerald-700 hover:bg-emerald-700/80">
-            Entrada
-          </Badge>
+          <Badge>Entrada</Badge>
         ) : (
           <Badge variant="destructive">Saída</Badge>
         ),
@@ -101,18 +99,18 @@ function getColumns(
               } = useConfirmDialog();
 
               const handleDeleteDialogConfirm = React.useCallback(async () => {
-                try {
-                  await deleteSalesEntry(row.original.id, salesDay);
-                  handleDeleteDialogClose();
-                } catch (error) {
-                  if (error instanceof Error) {
-                    toast.error(error.message);
-                    return;
-                  }
-                  toast.error(
-                    "Erro desconhecido ao deletar movimentação! Por favor, tente novamente.",
-                  );
+                const response = await deleteSalesEntry(
+                  row.original.id,
+                  salesDay,
+                );
+                handleDeleteDialogClose();
+
+                if (!response.success) {
+                  response.message && toast.error(response.message);
+                  return;
                 }
+
+                toast.success("Movimentação excluída com sucesso!");
               }, [handleDeleteDialogClose, row.original.id]);
 
               return (

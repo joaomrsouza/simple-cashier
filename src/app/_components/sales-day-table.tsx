@@ -4,8 +4,9 @@ import { DataTable } from "@/components/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAdminLocker } from "@/hooks/use-admin-locker";
 import { useDataTable } from "@/hooks/use-data-table";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getToday } from "@/lib/utils";
 import { type CompleteSalesDay } from "@/server/db";
 import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
@@ -20,7 +21,9 @@ interface SalesDayTableProps {
 export function SalesDayTable(props: SalesDayTableProps) {
   const { data, pageCount } = props;
 
-  const columns = React.useMemo(() => getColumns(), []);
+  const { locked } = useAdminLocker();
+
+  const columns = React.useMemo(() => getColumns(locked), [locked]);
 
   const { table } = useDataTable({
     columns,
@@ -37,21 +40,24 @@ export function SalesDayTable(props: SalesDayTableProps) {
   );
 }
 
-function getColumns(): ColumnDef<CompleteSalesDay>[] {
+function getColumns(adminLocked: boolean): ColumnDef<CompleteSalesDay>[] {
   return [
     {
       accessorKey: "date",
-      cell: ({ cell, row }) => (
-        <Button asChild size="xs" variant="link" className="p-0">
-          <Link href={`./${row.original.date}`}>
-            <div className="flex space-x-2">
-              <span className="max-w-[31.25rem] truncate font-medium">
-                {cell.getValue<string>().split("-").reverse().join("/")}
-              </span>
-            </div>
-          </Link>
-        </Button>
-      ),
+      cell: ({ cell, row }) =>
+        adminLocked && getToday() !== cell.getValue<string>() ? (
+          cell.getValue<string>().split("-").reverse().join("/")
+        ) : (
+          <Button asChild size="xs" variant="link" className="p-0">
+            <Link href={`./${row.original.date}`}>
+              <div className="flex space-x-2">
+                <span className="max-w-[31.25rem] truncate font-medium">
+                  {cell.getValue<string>().split("-").reverse().join("/")}
+                </span>
+              </div>
+            </Link>
+          </Button>
+        ),
       enableHiding: false,
       enableSorting: false,
       header: ({ column }) => (
@@ -72,7 +78,7 @@ function getColumns(): ColumnDef<CompleteSalesDay>[] {
       cell: ({ cell }) => (
         <span className="flex">
           <ArrowUpIcon className="mr-2 size-4 text-emerald-700" />
-          {formatCurrency(cell.getValue<number>())}
+          {adminLocked ? "******" : formatCurrency(cell.getValue<number>())}
         </span>
       ),
       enableHiding: false,
@@ -86,7 +92,9 @@ function getColumns(): ColumnDef<CompleteSalesDay>[] {
       cell: ({ cell }) => (
         <span className="flex">
           <ArrowDownIcon className="mr-2 size-4 text-destructive" />
-          {formatCurrency(cell.getValue<number>()).replace("-", "")}
+          {adminLocked
+            ? "******"
+            : formatCurrency(cell.getValue<number>()).replace("-", "")}
         </span>
       ),
       enableHiding: false,
@@ -97,7 +105,8 @@ function getColumns(): ColumnDef<CompleteSalesDay>[] {
     },
     {
       accessorKey: "balance",
-      cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+      cell: ({ cell }) =>
+        adminLocked ? "******" : formatCurrency(cell.getValue<number>()),
       enableHiding: false,
       enableSorting: false,
       header: ({ column }) => (
@@ -108,9 +117,7 @@ function getColumns(): ColumnDef<CompleteSalesDay>[] {
       accessorKey: "open",
       cell: ({ cell }) =>
         cell.getValue<number>() === 1 ? (
-          <Badge className="bg-emerald-700 hover:bg-emerald-700/80">
-            Caixa Aberto
-          </Badge>
+          <Badge>Caixa Aberto</Badge>
         ) : (
           <Badge variant="destructive">Caixa Fechado</Badge>
         ),

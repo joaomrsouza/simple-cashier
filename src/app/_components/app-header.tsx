@@ -1,3 +1,4 @@
+import { AdminLocker } from "@/components/admin-locker";
 import { ThemeToggler } from "@/components/theme-toggler";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ export function AppHeader() {
             by @joaomrsouza
           </a>
         </Button>
+        <AdminLocker />
         <ThemeToggler />
       </span>
     </div>

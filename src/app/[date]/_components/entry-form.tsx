@@ -15,7 +15,7 @@ const EntryFormSchema = z.object({
   type: z.enum(["in", "out"]),
   value: z
     .number({ message: "O valor deve ser um número" })
-    .refine((value) => value !== 0, {
+    .refine(value => value !== 0, {
       message: "O valor não pode ser 0",
     }),
 });
@@ -36,29 +36,29 @@ export function EntryForm(props: EntryFormProps) {
 
   const {
     formState: { errors, isSubmitting },
+    handleSubmit,
   } = form;
 
   async function onSubmit(data: EntryFormData) {
-    try {
-      await insertSalesEntry(date, data.value * (data.type === "in" ? 1 : -1));
-      form.reset();
-      form.setFocus("value");
-      toast.success("Movimentação salva com sucesso!");
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-        return;
-      }
-      toast.error(
-        "Erro desconhecido ao inserir movimentação! Por favor, tente novamente.",
-      );
+    const response = await insertSalesEntry(
+      date,
+      data.value * (data.type === "in" ? 1 : -1),
+    );
+
+    if (!response.success) {
+      response.message && toast.error(response.message);
+      return;
     }
+
+    form.reset();
+    form.setFocus("value");
+    toast.success("Movimentação salva com sucesso!");
   }
 
   return (
     <div className="container">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex items-start gap-2">
             <FormInput<EntryFormData>
               step="0.01"

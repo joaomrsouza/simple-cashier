@@ -40,8 +40,8 @@ const config = {
     "perfectionist/sort-array-includes": [
       "warn",
       {
-        order: "asc",
         groupKind: "literals-first",
+        order: "asc",
         type: "alphabetical",
       },
     ],
@@ -104,21 +104,21 @@ const config = {
     "perfectionist/sort-union-types": [
       "warn",
       {
+        groups: ["unknown", "nullish"],
         order: "asc",
         type: "alphabetical",
-        groups: ["unknown", "nullish"],
       },
     ],
 
-    "react/jsx-handler-names": [
-      "warn",
-      {
-        checkInlineFunction: false,
-        checkLocalVariables: true,
-        eventHandlerPrefix: "handle",
-        eventHandlerPropPrefix: "on",
-      },
-    ],
+    // "react/jsx-handler-names": [
+    //   "warn",
+    //   {
+    //     checkInlineFunction: false,
+    //     checkLocalVariables: true,
+    //     eventHandlerPrefix: "handle",
+    //     eventHandlerPropPrefix: "on",
+    //   },
+    // ],
     "react/jsx-key": ["error", { checkFragmentShorthand: true }],
     "react/jsx-no-useless-fragment": "warn",
   },
